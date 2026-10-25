@@ -2,10 +2,13 @@
 import io
 import json
 import os
+import pty
+import select
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -68,6 +71,55 @@ class HostProbeTests(unittest.TestCase):
     def test_missing_tool_has_no_dialect(self):
         h = self.probe("Linux", {"ID": "debian", "VERSION_ID": "12"}, present=("sudo",))
         self.assertEqual(h["dialect"], {})
+
+
+def run_in_pty(argv, env, answers=(), timeout=30):
+    """Run argv with a real controlling terminal (pty). When `prompt` appears in the output,
+    type `reply`. Returns (exit status, decoded output). Stdlib only; works on Linux and macOS."""
+    pid, fd = pty.fork()
+    if pid == 0:                      # child: becomes session leader with the pty as its terminal
+        try:
+            os.execve(argv[0], argv, env)
+        finally:
+            os._exit(127)
+    out, pending = b"", list(answers)
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        ready, _, _ = select.select([fd], [], [], 0.2)
+        if not ready:
+            continue
+        try:
+            chunk = os.read(fd, 4096)
+        except OSError:               # EIO once the child has exited
+            break
+        if not chunk:
+            break
+        out += chunk
+        if pending and pending[0][0].encode() in out:
+            os.write(fd, pending.pop(0)[1].encode())
+    _, status = os.waitpid(pid, 0)
+    return os.WEXITSTATUS(status), out.decode("utf-8", "replace")
+
+
+class RealTerminalTests(unittest.TestCase):
+    """The confirmation prompt must work on a real terminal. Unit tests inject `ask`, which is how
+    a broken /dev/tty handling (text-mode 'r+' raises UnsupportedOperation) went unnoticed."""
+
+    def ask(self, reply):
+        code = ("import sys; sys.path.insert(0, %r); from babelsh.cli import _ask_tty; "
+                "print('ANSWER=' + repr(_ask_tty('Q? ')))" % ROOT)
+        status, out = run_in_pty([sys.executable, "-c", code], dict(os.environ),
+                                 [("Q? ", reply)])
+        return out
+
+    def test_answer_is_read_from_the_terminal(self):
+        self.assertIn("ANSWER='y'", self.ask("y\n"))
+
+    def test_empty_answer_is_an_empty_string_not_none(self):
+        self.assertIn("ANSWER=''", self.ask("\n"))
+
+    def test_prompt_is_written_to_the_terminal(self):
+        self.assertIn("Q? ", self.ask("n\n"))
 
 
 class ExplainTests(unittest.TestCase):
@@ -220,6 +272,25 @@ class HookScenarios(object):
                              env=e, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                              universal_newlines=True, start_new_session=True, timeout=30)
         return res.returncode, res.stdout, res.stderr
+
+    def pty_sh(self, script, answers):
+        e = {"PATH": self.sandbox, "USH_FORCE": "1", "NO_COLOR": "1", "TERM": "dumb",
+             "USH_RULES": os.path.join(ROOT, "babelsh", "data", "rules.json"),
+             "USH_HOST": json.dumps(self.MAC)}
+        argv = [shutil.which(self.SHELL)] + self.SHELL_ARGS + [
+            "-c", "source %s\n%s" % (self.hook, script)]
+        return run_in_pty(argv, e, answers)
+
+    def test_confirming_over_a_real_terminal_runs_the_translation(self):
+        status, out = self.pty_sh("sed -i 's/a/b/' f.txt", [("[y/N] ", "y\n")])
+        self.assertIn("REAL-SED -i  s/a/b/ f.txt", out)       # the fake BSD-style sed ran
+        self.assertEqual(status, 0)
+
+    def test_declining_over_a_real_terminal_runs_nothing(self):
+        status, out = self.pty_sh("sed -i 's/a/b/' f.txt", [("[y/N] ", "n\n")])
+        self.assertNotIn("REAL-SED", out)
+        self.assertIn("cancelled", out)
+        self.assertEqual(status, 1)
 
     def test_module_launcher_form_works_without_bin_ush(self):
         # What a pip-installed babelsh generates: `python -m babelsh`, no checkout path.

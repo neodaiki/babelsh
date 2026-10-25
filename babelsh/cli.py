@@ -57,12 +57,15 @@ class _UI(object):
 
 def _ask_tty(prompt):
     """One line from the controlling terminal (not stdin: stdin may be a pipe). None = no answer."""
+    # Separate read and write handles: a text-mode "r+" open of a tty raises
+    # io.UnsupportedOperation ("not seekable"), which is an OSError and would be mistaken for
+    # "no terminal".
     try:
-        with open("/dev/tty", "r+") as tty:
-            tty.write(prompt)
-            tty.flush()
-            line = tty.readline()
-    except OSError:
+        with open("/dev/tty", "w") as out, open("/dev/tty", "r") as inp:
+            out.write(prompt)
+            out.flush()
+            line = inp.readline()
+    except (OSError, ValueError):
         return None
     return line.rstrip("\n") if line else None
 

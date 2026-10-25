@@ -169,9 +169,19 @@ class HandlePlanTests(unittest.TestCase):
         self.assertEqual((r, u, self.calls), (127, 1, []))
 
 
-@unittest.skipUnless(shutil.which("bash"), "bash not available")
-class BashHookTests(unittest.TestCase):
-    """Drives the real generated hook with a sandboxed PATH on a pretend-macOS host."""
+def _bash_major():
+    exe = shutil.which("bash")
+    if not exe:
+        return 0
+    out = subprocess.run([exe, "-c", "echo ${BASH_VERSINFO[0]}"], stdout=subprocess.PIPE,
+                         universal_newlines=True).stdout.strip()
+    return int(out) if out.isdigit() else 0
+
+
+class HookScenarios(object):
+    """Drives the real generated hook with a sandboxed PATH on a pretend-macOS host.
+    Mixed into one TestCase per shell (not a TestCase itself, so a skipped shell cannot
+    skip the others)."""
 
     SHELL = "bash"
     SHELL_ARGS = ["--norc", "--noprofile"]
@@ -275,8 +285,14 @@ class BashHookTests(unittest.TestCase):
         self.assertEqual(out, "ush-dry-run: brew install nginx\n")
 
 
+@unittest.skipUnless(_bash_major() >= 4,
+                     "bash >= 4 needed for command_not_found_handle (macOS ships 3.2)")
+class BashHookTests(HookScenarios, unittest.TestCase):
+    pass
+
+
 @unittest.skipUnless(shutil.which("zsh"), "zsh not available")
-class ZshHookTests(BashHookTests):
+class ZshHookTests(HookScenarios, unittest.TestCase):
     """Same scenarios through the zsh hook."""
 
     SHELL = "zsh"

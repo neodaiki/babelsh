@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Oldest supported Python on a pinned Linux image (the dev machine is Ubuntu 22.04).
+          - { os: ubuntu-22.04, python: "3.8" }
+          - { os: ubuntu-latest, python: "3.12" }
+          # The only real macOS coverage the project has. arm64 runner; 3.8 is not offered
+          # there by setup-python, so macOS runs the current Python only.
+          - { os: macos-latest, python: "3.12" }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install test dependencies
+        # PyYAML: rule compiler + golden runner. cryptography: optional cross-check of our Ed25519.
+        run: python -m pip install pyyaml cryptography
+
+      - name: Environment
+        run: |
+          uname -a
+          python --version
+          bash --version | head -1
+          zsh --version || echo "no zsh"
+
+      - name: Unit and integration tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Golden translation cases
+        run: python tests/run_golden.py
+
+      - name: Bundled rules are up to date
+        run: |
+          python compiler/compile_rules.py spec/examples -o "$RUNNER_TEMP/rules.json"
+          cmp "$RUNNER_TEMP/rules.json" babelsh/data/rules.json
+
+      - name: Real-host report (informational)
+        # Shows what ush detects and translates on this runner with *real* probing, no
+        # simulated profile. On macos-latest this is the first real macOS evidence.
+        if: always()
+        continue-on-error: true
+        run: |
+          python bin/ush hostinfo
+          python bin/ush explain "apt install -y nginx"
+          python bin/ush explain "sudo apt install -y nginx"
+          python bin/ush explain "systemctl start nginx"
+          python bin/ush explain "apt install libssl-dev build-essential"
+          python bin/ush explain sed -i "s/a/b/" f.txt
+          python bin/ush explain sed -i "" "s/a/b/" f.txt
+          python bin/ush explain "ss -tulnp"
+          python bin/ush explain "dnf install -y htop"

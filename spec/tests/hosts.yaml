@@ -1,0 +1,52 @@
+# Host profile fixtures for golden tests (see SPEC.md §2).
+# Fields not listed default to: has.* = false, is_root = false, dialect.* = absent.
+
+debian12:                     # normal desktop/server user with sudo
+  family: debian
+  os_id: debian-12
+  arch: amd64
+  dialect: { sed: gnu, grep: gnu }
+  has: { apt: true, sudo: true, systemctl: true }
+  is_root: false
+
+debian12_container_root:      # docker container: root, no sudo
+  family: debian
+  os_id: debian-12
+  arch: amd64
+  dialect: { sed: gnu, grep: gnu }
+  has: { apt: true, sudo: false }
+  is_root: true
+
+debian12_linuxbrew:           # Linuxbrew installed next to apt
+  family: debian
+  os_id: debian-12
+  arch: amd64
+  dialect: { sed: gnu, grep: gnu }
+  has: { apt: true, brew: true, sudo: true, systemctl: true }
+  is_root: false
+
+fedora40:
+  family: fedora
+  os_id: fedora-40
+  arch: amd64
+  dialect: { sed: gnu, grep: gnu }
+  has: { dnf: true, sudo: true, systemctl: true }
+  is_root: false
+
+macos14:                      # stock macOS, BSD userland
+  family: macos
+  os_id: macos-14
+  arch: arm64
+  brew_prefix: /opt/homebrew
+  dialect: { sed: bsd, grep: bsd }
+  has: { brew: true, sudo: true, lsof: true }
+  is_root: false
+
+macos14_gnu_sed:              # brew gnu-sed linked as `sed` on PATH
+  family: macos
+  os_id: macos-14
+  arch: arm64
+  brew_prefix: /opt/homebrew
+  dialect: { sed: gnu, grep: bsd }
+  has: { brew: true, sudo: true, lsof: true }
+  is_root: false

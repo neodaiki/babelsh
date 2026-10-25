@@ -1,0 +1,120 @@
+schema: 1
+intents:
+  - id: pkg.install
+    risk: modify
+    package_action: install     # built-in actions (xcode_clt ...) in package targets run only here
+    args:
+      pkgs: { type: package_list, min: 1 }
+    flags:
+      assume_yes: { type: bool }
+    forms:
+      - when: { family: debian }
+        match: { cmd: [apt, apt-get], sub: install }
+        flag_map: { "-y": assume_yes, "--yes": assume_yes }
+        render: [ apt, install, { if: assume_yes, then: ["-y"] }, { splat: pkgs } ]
+        root: required
+      - when: { family: fedora }
+        match: { cmd: [dnf, yum], sub: install }
+        flag_map: { "-y": assume_yes, "--assumeyes": assume_yes }
+        render: [ dnf, install, { if: assume_yes, then: ["-y"] }, { splat: pkgs } ]
+        root: required
+      - when: { family: macos }
+        match: { cmd: [brew], sub: install }
+        flag_map: {}
+        render: [ brew, install, { splat: pkgs } ]
+        root: forbidden
+        implicit: [ assume_yes ]   # brew never prompts; canonical flag intentionally unused
+        fidelity: exact
+
+  - id: pkg.remove
+    risk: destructive
+    args:
+      pkgs: { type: package_list, min: 1 }
+    forms:
+      - when: { family: debian }
+        match: { cmd: [apt, apt-get], sub: remove }
+        render: [ apt, remove, { splat: pkgs } ]
+        root: required
+      - when: { family: fedora }
+        match: { cmd: [dnf, yum], sub: remove }
+        render: [ dnf, remove, { splat: pkgs } ]
+        root: required
+      - when: { family: macos }
+        match: { cmd: [brew], sub: uninstall }
+        render: [ brew, uninstall, { splat: pkgs } ]
+        root: forbidden
+
+  - id: pkg.update_index
+    risk: modify
+    forms:
+      - when: { family: debian }
+        match: { cmd: [apt, apt-get], sub: update }
+        render: [ apt, update ]
+        root: required
+      - when: { family: fedora }
+        match: { cmd: [dnf], sub: makecache }
+        render: [ dnf, makecache ]
+        root: required
+      - when: { family: macos }
+        match: { cmd: [brew], sub: update }
+        render: [ brew, update ]
+        root: forbidden
+
+  - id: service.start
+    risk: modify
+    args:
+      svc: { type: service }
+    forms:
+      - when: { family: debian }
+        match: { cmd: [systemctl], sub: start }
+        render: [ systemctl, start, { ref: svc } ]
+        root: required
+      - when: { family: fedora }
+        match: { cmd: [systemctl], sub: start }
+        render: [ systemctl, start, { ref: svc } ]
+        root: required
+      - when: { family: macos }
+        match: { cmd: [brew], sub: services, subsub: start }
+        render: [ brew, services, start, { ref: svc } ]
+        root: optional
+        fidelity: approximate
+        note:
+          en: "brew services runs a per-user launchd agent, not a system unit."
+          ko: "brew services는 시스템 유닛이 아니라 사용자 단위 launchd 에이전트입니다."
+
+  - id: text.sed_inplace
+    risk: modify
+    args:
+      script: { type: string }
+      files: { type: path_list, min: 1 }
+    forms:
+      - when: { dialect: { sed: gnu } }
+        match: { cmd: [sed], flags_any: ["-i", "--in-place"] }
+        render: [ sed, -i, { ref: script }, { splat: files } ]
+      - when: { dialect: { sed: bsd } }
+        match:
+          cmd: [sed]
+          flags_any: ["-i"]
+          takes_value: ["-i"]        # BSD: the next argument is the backup suffix
+          evidence: [ { after_flag: "-i", token: "" } ]
+        render: [ sed, -i, "", { ref: script }, { splat: files } ]
+
+  - id: net.listening_sockets
+    risk: read
+    forms:
+      - when: { family: debian }
+        match: { cmd: [ss], flags_all: ["-t", "-u", "-l", "-n", "-p"] }
+        render: [ ss, -tulnp ]
+        root: optional
+      - when: { family: fedora }
+        match: { cmd: [ss], flags_all: ["-t", "-u", "-l", "-n", "-p"] }
+        render: [ ss, -tulnp ]
+        root: optional
+      - when: { family: macos }
+        match: { cmd: [lsof], flags_all: ["-i", "-P", "-n"] }
+        render: [ lsof, -i, -P, -n ]
+        root: optional
+        fidelity: approximate
+        note:
+          en: "Output format differs from ss; scripts parsing it will break. Needs sudo to see other users' sockets. Also lists non-listening connections."
+          ko: "출력 형식이 ss와 달라 파싱 스크립트는 동작하지 않습니다. 다른 사용자 소켓은 sudo가 필요하고, LISTEN 아닌 연결도 함께 나옵니다."

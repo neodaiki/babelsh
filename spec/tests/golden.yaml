@@ -1,0 +1,303 @@
+# Golden translation cases. The client's pure function under test:
+#     translate(input: str, host: HostProfile, rules) -> Plan
+# No network, no LLM, no process execution. Hosts are in hosts.yaml.
+#
+# Plan (what `expect` is compared against):
+#   status:   translated | passthrough | refused | unsupported
+#   steps:    list of {argv: [...]}  (sudo, if any, is the first argv item)
+#   joins:    operators between steps/segments, e.g. ["&&"], ["|"]; omitted for a single step
+#   fidelity: exact | approximate | lossy | unsupported      (translated/unsupported only)
+#   risk:     read | modify | destructive
+#   confirm:  none | enter | yn | typed     (derived from risk + fidelity; see SPEC §4.6)
+#   notes:    list of substrings that must appear in the user-visible notes
+#   notes_absent: substrings that must NOT appear (guards against cross-family notes)
+#   reason:   machine code for refused: unmapped_flag | unknown_name | no_rule |
+#             dynamic_argument | ambiguous
+# "# GAP" marks a case whose expectation needs a schema decision (SPEC §8).
+#
+# Convention: an "input" is typed on `host`; source family is inferred from the command.
+
+cases:
+  # ---------- package install: the core path ----------
+  - id: apt-install-on-macos-strips-sudo
+    host: macos14
+    input: "sudo apt install -y nginx"
+    expect:
+      status: translated
+      steps: [ { argv: [brew, install, nginx] } ]
+      fidelity: exact
+      risk: modify
+      confirm: yn
+
+  - id: apt-install-two-concepts-on-macos
+    host: macos14
+    input: "apt install libssl-dev build-essential"
+    expect:
+      status: translated
+      steps:
+        - argv: [brew, install, "openssl@3"]
+        - argv: [xcode-select, --install]
+      joins: ["&&"]
+      fidelity: approximate
+      risk: modify
+      confirm: yn
+      notes: ["LDFLAGS", "GUI"]
+
+  - id: apt-install-on-fedora-adds-sudo
+    host: fedora40
+    input: "apt install libssl-dev"
+    expect:
+      status: translated
+      steps: [ { argv: [sudo, dnf, install, openssl-devel] } ]
+      fidelity: exact          # per-family fidelity (SPEC §3): macOS-only note must not leak here
+      risk: modify
+      confirm: yn
+      notes_absent: ["LDFLAGS"]
+
+  - id: dnf-install-on-debian-user
+    host: debian12
+    input: "dnf install -y htop"
+    expect:
+      status: translated
+      steps: [ { argv: [sudo, apt, install, -y, htop] } ]
+      fidelity: exact
+      risk: modify
+      confirm: yn
+
+  - id: dnf-install-in-root-container-no-sudo
+    host: debian12_container_root
+    input: "dnf install -y htop"
+    expect:
+      status: translated
+      steps: [ { argv: [apt, install, -y, htop] } ]
+      fidelity: exact
+      risk: modify
+      confirm: yn
+
+  - id: apt-update-on-fedora
+    host: fedora40
+    input: "apt update"
+    expect:
+      status: translated
+      steps: [ { argv: [sudo, dnf, makecache] } ]
+      fidelity: exact          # GAP: apt update vs dnf makecache are close, not identical; decide "exact" vs "approximate"
+      risk: modify
+      confirm: yn
+
+  # ---------- destructive ----------
+  - id: apt-remove-on-macos-is-destructive
+    host: macos14
+    input: "sudo apt remove nginx"
+    expect:
+      status: translated
+      steps: [ { argv: [brew, uninstall, nginx] } ]
+      fidelity: exact
+      risk: destructive
+      confirm: typed
+
+  # ---------- refusals (must NOT touch the command) ----------
+  - id: unmapped-flag-refuses
+    host: macos14
+    input: "apt install --no-install-recommends htop"
+    expect:
+      status: refused
+      reason: unmapped_flag
+      notes: ["--no-install-recommends"]
+
+  - id: unknown-package-refuses
+    host: macos14
+    input: "apt install totally-made-up-pkg-123"
+    expect:
+      status: refused
+      reason: unknown_name
+      notes: ["totally-made-up-pkg-123"]
+
+  - id: subcommand-without-rule-refuses
+    host: macos14
+    input: "apt search ripgrep"
+    expect:
+      status: refused
+      reason: no_rule
+
+  - id: dynamic-argument-refuses
+    host: macos14
+    input: 'apt install $(cat pkgs.txt)'
+    expect:
+      status: refused
+      reason: dynamic_argument
+
+  # ---------- pass-through (no interception) ----------
+  - id: native-command-passes-through
+    host: debian12
+    input: "apt install -y nginx"
+    expect:
+      status: passthrough
+
+  - id: brew-on-linux-with-linuxbrew-passes-through
+    host: debian12_linuxbrew
+    input: "brew install htop"
+    expect:
+      status: passthrough
+
+  - id: sudo-brew-on-macos
+    host: macos14
+    input: "sudo brew install htop"
+    expect:
+      status: translated       # GAP: native command, wrong sudo. Fix up (strip) or pass through?
+      steps: [ { argv: [brew, install, htop] } ]
+      fidelity: exact
+      risk: modify
+      confirm: yn
+      notes: ["sudo"]
+
+  # ---------- services ----------
+  - id: systemctl-start-on-macos
+    host: macos14
+    input: "systemctl start nginx"
+    expect:
+      status: translated
+      steps: [ { argv: [brew, services, start, nginx] } ]
+      fidelity: approximate
+      risk: modify
+      confirm: yn
+      notes: ["launchd"]
+
+  - id: sudo-systemctl-start-on-macos-keeps-sudo
+    host: macos14
+    input: "sudo systemctl start nginx"
+    expect:
+      status: translated
+      steps: [ { argv: [sudo, brew, services, start, nginx] } ]   # root:optional keeps the user's sudo
+      fidelity: approximate
+      risk: modify
+      confirm: yn
+      notes: ["launchd"]
+    # VERIFY on a real macOS box before trusting this expectation.
+
+  - id: systemctl-start-ssh-on-macos-unsupported
+    host: macos14
+    input: "systemctl start ssh"
+    expect:
+      status: unsupported
+      steps: []
+      fidelity: unsupported
+      risk: modify
+      notes: ["Remote Login"]
+
+  # ---------- redirects, background, nothing-to-do ----------
+  - id: simple-redirects-are-carried-over
+    host: macos14
+    input: "apt install -y nginx > install.log 2>&1"
+    expect:
+      status: translated
+      steps: [ { argv: [brew, install, nginx] } ]
+      command: "brew install nginx >install.log 2>&1"
+      fidelity: exact
+      risk: modify
+      confirm: yn
+
+  - id: redirect-on-multi-step-refused
+    host: macos14
+    input: "apt install libssl-dev build-essential > log"
+    expect:
+      status: refused
+      reason: shell_syntax
+
+  - id: background-job-refused
+    host: macos14
+    input: "apt install -y nginx &"
+    expect:
+      status: refused
+      reason: shell_syntax
+
+  - id: remove-of-install-only-concept-is-noop
+    host: macos14
+    input: "apt remove build-essential"
+    expect:
+      status: noop
+      steps: []
+
+  # ---------- compound input ----------
+  - id: and-chain-translates-each-segment
+    host: macos14
+    input: "apt install -y nginx && systemctl start nginx"
+    expect:
+      status: translated
+      steps:
+        - argv: [brew, install, nginx]
+        - argv: [brew, services, start, nginx]
+      joins: ["&&"]
+      fidelity: approximate    # worst segment wins
+      risk: modify
+      confirm: yn
+
+  - id: pipeline-translates-first-stage-only
+    host: macos14
+    input: "apt install -y nginx | tee install.log"
+    expect:
+      status: translated
+      steps:
+        - argv: [brew, install, nginx]
+        - argv: [tee, install.log]       # untouched; tee exists on host
+      joins: ["|"]
+      fidelity: exact
+      risk: modify
+      confirm: yn
+
+  # ---------- coreutils dialect ----------
+  - id: gnu-sed-i-on-bsd-host
+    host: macos14
+    input: "sed -i 's/a/b/' f.txt"
+    expect:
+      status: translated
+      steps: [ { argv: [sed, -i, "", "s/a/b/", f.txt] } ]
+      fidelity: exact
+      risk: modify
+      confirm: yn
+
+  - id: gnu-sed-i-with-gnu-sed-on-macos-passes-through
+    host: macos14_gnu_sed
+    input: "sed -i 's/a/b/' f.txt"
+    expect:
+      status: passthrough
+
+  - id: bsd-sed-i-on-gnu-host
+    host: debian12
+    input: "sed -i '' 's/a/b/' f.txt"
+    expect:
+      status: translated       # both forms parse; BSD wins on evidence (SPEC §4.7)
+      steps: [ { argv: [sed, -i, "s/a/b/", f.txt] } ]
+      fidelity: exact
+      risk: modify
+      confirm: yn
+
+  - id: sed-attached-suffix-is-portable-passes-through
+    host: macos14
+    input: "sed -i.bak 's/a/b/' f.txt"
+    expect:
+      status: passthrough      # `-i.bak` (attached) works on both GNU and BSD sed; nothing to translate
+
+  - id: sed-bsd-suffix-on-bsd-host-is-native
+    host: macos14
+    input: "sed -i .bak 's/a/b/' f.txt"
+    expect:
+      status: passthrough      # parses as BSD and GNU; no evidence; the host's own (BSD) form wins
+
+  - id: sed-bsd-suffix-on-gnu-host-assumed-native
+    host: debian12
+    input: "sed -i .bak 's/a/b/' f.txt"
+    expect:
+      status: passthrough      # parses as GNU and BSD; no evidence; rule 2b assumes the host's own (GNU) form.
+                               # GNU sed will then error on script ".bak": harmless, and ush does not guess.
+
+  # ---------- network ----------
+  - id: ss-tulnp-on-macos
+    host: macos14
+    input: "ss -tulnp"
+    expect:
+      status: translated       # GAP: needs short-flag clustering (-tulnp == -t -u -l -n -p)
+      steps: [ { argv: [lsof, -i, -P, -n] } ]
+      fidelity: approximate
+      risk: read
+      confirm: enter
+      notes: ["format", "sudo"]

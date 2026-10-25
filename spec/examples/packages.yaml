@@ -1,0 +1,39 @@
+schema: 1
+defaults: { source: seed }
+packages:
+  openssl_dev: { debian: libssl-dev, fedora: openssl-devel, macos: "openssl@3" }
+  build_toolchain:
+    debian: build-essential
+    fedora: [gcc, gcc-c++, make]
+    macos: { action: xcode_clt }
+  nginx: { debian: nginx, fedora: nginx, macos: nginx }
+  htop: { debian: htop, fedora: htop, macos: htop }
+  gnu_sed: { debian: ~, fedora: ~, macos: gnu-sed }
+  openssh_server: { debian: openssh-server, fedora: openssh-server, macos: "!" }
+
+# Long form for a concept that needs note/fidelity/aliases (compiler merges by id).
+concepts:
+  - id: openssl_dev
+    aliases: { debian: [libssl1.1-dev] }
+    fidelity: { macos: approximate }
+    note:
+      macos:
+        en: "set LDFLAGS/CPPFLAGS from $(brew --prefix openssl@3)."
+        ko: "LDFLAGS/CPPFLAGS를 $(brew --prefix openssl@3) 기준으로 지정해야 합니다."
+  - id: build_toolchain
+    fidelity: { macos: approximate }
+    note:
+      macos:
+        en: "Xcode Command Line Tools install opens a GUI dialog."
+        ko: "Xcode CLT 설치는 GUI 대화상자를 띄웁니다."
+  - id: gnu_sed
+    fidelity: { macos: approximate }
+    note:
+      macos:
+        en: "Installs as 'gsed' unless PATH is changed."
+        ko: "'gsed'라는 이름으로 설치됩니다."
+  - id: openssh_server
+    note:
+      macos:
+        en: "macOS ships sshd; enable via System Settings > General > Sharing > Remote Login."
+        ko: "macOS는 sshd가 기본 포함됩니다. 시스템 설정 > 일반 > 공유 > 원격 로그인에서 켜세요."

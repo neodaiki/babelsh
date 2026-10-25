@@ -1,0 +1,22 @@
+schema: 1
+defaults: { source: seed }
+services:
+  nginx:
+    debian: nginx
+    fedora: nginx
+    macos: nginx
+    note:
+      debian: { en: "Config: /etc/nginx.", ko: "설정 경로: /etc/nginx." }
+      fedora: { en: "Config: /etc/nginx.", ko: "설정 경로: /etc/nginx." }
+      macos:
+        en: "Config: $(brew --prefix)/etc/nginx."
+        ko: "설정 경로: $(brew --prefix)/etc/nginx."
+  ssh_daemon:
+    debian: ssh
+    fedora: sshd
+    macos: "!"
+    pkg: openssh_server
+    note:
+      macos:
+        en: "macOS ships sshd; enable via System Settings > General > Sharing > Remote Login."
+        ko: "macOS는 sshd가 기본 포함됩니다. 시스템 설정 > 일반 > 공유 > 원격 로그인에서 켜세요."

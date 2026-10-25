@@ -1,0 +1,672 @@
+{
+ "schema": 1,
+ "concepts": {
+  "openssl_dev": {
+   "kind": "package",
+   "targets": {
+    "debian": [
+     {
+      "pkg": "libssl-dev"
+     }
+    ],
+    "fedora": [
+     {
+      "pkg": "openssl-devel"
+     }
+    ],
+    "macos": [
+     {
+      "pkg": "openssl@3"
+     }
+    ]
+   },
+   "source": "seed",
+   "aliases": {
+    "debian": [
+     "libssl1.1-dev"
+    ]
+   },
+   "fidelity": {
+    "macos": "approximate"
+   },
+   "note": {
+    "macos": {
+     "en": "set LDFLAGS/CPPFLAGS from $(brew --prefix openssl@3).",
+     "ko": "LDFLAGS/CPPFLAGS를 $(brew --prefix openssl@3) 기준으로 지정해야 합니다."
+    }
+   }
+  },
+  "build_toolchain": {
+   "kind": "package",
+   "targets": {
+    "debian": [
+     {
+      "pkg": "build-essential"
+     }
+    ],
+    "fedora": [
+     {
+      "pkg": "gcc"
+     },
+     {
+      "pkg": "gcc-c++"
+     },
+     {
+      "pkg": "make"
+     }
+    ],
+    "macos": [
+     {
+      "action": "xcode_clt"
+     }
+    ]
+   },
+   "source": "seed",
+   "fidelity": {
+    "macos": "approximate"
+   },
+   "note": {
+    "macos": {
+     "en": "Xcode Command Line Tools install opens a GUI dialog.",
+     "ko": "Xcode CLT 설치는 GUI 대화상자를 띄웁니다."
+    }
+   }
+  },
+  "nginx": {
+   "kind": "package",
+   "targets": {
+    "debian": [
+     {
+      "pkg": "nginx"
+     }
+    ],
+    "fedora": [
+     {
+      "pkg": "nginx"
+     }
+    ],
+    "macos": [
+     {
+      "pkg": "nginx"
+     }
+    ]
+   },
+   "source": "seed"
+  },
+  "htop": {
+   "kind": "package",
+   "targets": {
+    "debian": [
+     {
+      "pkg": "htop"
+     }
+    ],
+    "fedora": [
+     {
+      "pkg": "htop"
+     }
+    ],
+    "macos": [
+     {
+      "pkg": "htop"
+     }
+    ]
+   },
+   "source": "seed"
+  },
+  "gnu_sed": {
+   "kind": "package",
+   "targets": {
+    "debian": [
+     {
+      "drop": true
+     }
+    ],
+    "fedora": [
+     {
+      "drop": true
+     }
+    ],
+    "macos": [
+     {
+      "pkg": "gnu-sed"
+     }
+    ]
+   },
+   "source": "seed",
+   "fidelity": {
+    "macos": "approximate"
+   },
+   "note": {
+    "macos": {
+     "en": "Installs as 'gsed' unless PATH is changed.",
+     "ko": "'gsed'라는 이름으로 설치됩니다."
+    }
+   }
+  },
+  "openssh_server": {
+   "kind": "package",
+   "targets": {
+    "debian": [
+     {
+      "pkg": "openssh-server"
+     }
+    ],
+    "fedora": [
+     {
+      "pkg": "openssh-server"
+     }
+    ],
+    "macos": [
+     {
+      "unsupported": true
+     }
+    ]
+   },
+   "source": "seed",
+   "note": {
+    "macos": {
+     "en": "macOS ships sshd; enable via System Settings > General > Sharing > Remote Login.",
+     "ko": "macOS는 sshd가 기본 포함됩니다. 시스템 설정 > 일반 > 공유 > 원격 로그인에서 켜세요."
+    }
+   }
+  }
+ },
+ "services": {
+  "nginx": {
+   "units": {
+    "debian": "nginx",
+    "fedora": "nginx",
+    "macos": "nginx"
+   },
+   "note": {
+    "debian": {
+     "en": "Config: /etc/nginx.",
+     "ko": "설정 경로: /etc/nginx."
+    },
+    "fedora": {
+     "en": "Config: /etc/nginx.",
+     "ko": "설정 경로: /etc/nginx."
+    },
+    "macos": {
+     "en": "Config: $(brew --prefix)/etc/nginx.",
+     "ko": "설정 경로: $(brew --prefix)/etc/nginx."
+    }
+   },
+   "source": "seed"
+  },
+  "ssh_daemon": {
+   "units": {
+    "debian": "ssh",
+    "fedora": "sshd",
+    "macos": "!"
+   },
+   "note": {
+    "macos": {
+     "en": "macOS ships sshd; enable via System Settings > General > Sharing > Remote Login.",
+     "ko": "macOS는 sshd가 기본 포함됩니다. 시스템 설정 > 일반 > 공유 > 원격 로그인에서 켜세요."
+    }
+   },
+   "pkg": "openssh_server",
+   "source": "seed"
+  }
+ },
+ "intents": [
+  {
+   "id": "pkg.install",
+   "risk": "modify",
+   "package_action": "install",
+   "args": {
+    "pkgs": {
+     "type": "package_list",
+     "min": 1
+    }
+   },
+   "flags": {
+    "assume_yes": {
+     "type": "bool"
+    }
+   },
+   "forms": [
+    {
+     "when": {
+      "family": "debian"
+     },
+     "match": {
+      "cmd": [
+       "apt",
+       "apt-get"
+      ],
+      "sub": "install"
+     },
+     "flag_map": {
+      "-y": "assume_yes",
+      "--yes": "assume_yes"
+     },
+     "render": [
+      "apt",
+      "install",
+      {
+       "if": "assume_yes",
+       "then": [
+        "-y"
+       ]
+      },
+      {
+       "splat": "pkgs"
+      }
+     ],
+     "root": "required"
+    },
+    {
+     "when": {
+      "family": "fedora"
+     },
+     "match": {
+      "cmd": [
+       "dnf",
+       "yum"
+      ],
+      "sub": "install"
+     },
+     "flag_map": {
+      "-y": "assume_yes",
+      "--assumeyes": "assume_yes"
+     },
+     "render": [
+      "dnf",
+      "install",
+      {
+       "if": "assume_yes",
+       "then": [
+        "-y"
+       ]
+      },
+      {
+       "splat": "pkgs"
+      }
+     ],
+     "root": "required"
+    },
+    {
+     "when": {
+      "family": "macos"
+     },
+     "match": {
+      "cmd": [
+       "brew"
+      ],
+      "sub": "install"
+     },
+     "flag_map": {},
+     "render": [
+      "brew",
+      "install",
+      {
+       "splat": "pkgs"
+      }
+     ],
+     "root": "forbidden",
+     "implicit": [
+      "assume_yes"
+     ],
+     "fidelity": "exact"
+    }
+   ]
+  },
+  {
+   "id": "pkg.remove",
+   "risk": "destructive",
+   "args": {
+    "pkgs": {
+     "type": "package_list",
+     "min": 1
+    }
+   },
+   "forms": [
+    {
+     "when": {
+      "family": "debian"
+     },
+     "match": {
+      "cmd": [
+       "apt",
+       "apt-get"
+      ],
+      "sub": "remove"
+     },
+     "render": [
+      "apt",
+      "remove",
+      {
+       "splat": "pkgs"
+      }
+     ],
+     "root": "required"
+    },
+    {
+     "when": {
+      "family": "fedora"
+     },
+     "match": {
+      "cmd": [
+       "dnf",
+       "yum"
+      ],
+      "sub": "remove"
+     },
+     "render": [
+      "dnf",
+      "remove",
+      {
+       "splat": "pkgs"
+      }
+     ],
+     "root": "required"
+    },
+    {
+     "when": {
+      "family": "macos"
+     },
+     "match": {
+      "cmd": [
+       "brew"
+      ],
+      "sub": "uninstall"
+     },
+     "render": [
+      "brew",
+      "uninstall",
+      {
+       "splat": "pkgs"
+      }
+     ],
+     "root": "forbidden"
+    }
+   ]
+  },
+  {
+   "id": "pkg.update_index",
+   "risk": "modify",
+   "forms": [
+    {
+     "when": {
+      "family": "debian"
+     },
+     "match": {
+      "cmd": [
+       "apt",
+       "apt-get"
+      ],
+      "sub": "update"
+     },
+     "render": [
+      "apt",
+      "update"
+     ],
+     "root": "required"
+    },
+    {
+     "when": {
+      "family": "fedora"
+     },
+     "match": {
+      "cmd": [
+       "dnf"
+      ],
+      "sub": "makecache"
+     },
+     "render": [
+      "dnf",
+      "makecache"
+     ],
+     "root": "required"
+    },
+    {
+     "when": {
+      "family": "macos"
+     },
+     "match": {
+      "cmd": [
+       "brew"
+      ],
+      "sub": "update"
+     },
+     "render": [
+      "brew",
+      "update"
+     ],
+     "root": "forbidden"
+    }
+   ]
+  },
+  {
+   "id": "service.start",
+   "risk": "modify",
+   "args": {
+    "svc": {
+     "type": "service"
+    }
+   },
+   "forms": [
+    {
+     "when": {
+      "family": "debian"
+     },
+     "match": {
+      "cmd": [
+       "systemctl"
+      ],
+      "sub": "start"
+     },
+     "render": [
+      "systemctl",
+      "start",
+      {
+       "ref": "svc"
+      }
+     ],
+     "root": "required"
+    },
+    {
+     "when": {
+      "family": "fedora"
+     },
+     "match": {
+      "cmd": [
+       "systemctl"
+      ],
+      "sub": "start"
+     },
+     "render": [
+      "systemctl",
+      "start",
+      {
+       "ref": "svc"
+      }
+     ],
+     "root": "required"
+    },
+    {
+     "when": {
+      "family": "macos"
+     },
+     "match": {
+      "cmd": [
+       "brew"
+      ],
+      "sub": "services",
+      "subsub": "start"
+     },
+     "render": [
+      "brew",
+      "services",
+      "start",
+      {
+       "ref": "svc"
+      }
+     ],
+     "root": "optional",
+     "fidelity": "approximate",
+     "note": {
+      "en": "brew services runs a per-user launchd agent, not a system unit.",
+      "ko": "brew services는 시스템 유닛이 아니라 사용자 단위 launchd 에이전트입니다."
+     }
+    }
+   ]
+  },
+  {
+   "id": "text.sed_inplace",
+   "risk": "modify",
+   "args": {
+    "script": {
+     "type": "string"
+    },
+    "files": {
+     "type": "path_list",
+     "min": 1
+    }
+   },
+   "forms": [
+    {
+     "when": {
+      "dialect": {
+       "sed": "gnu"
+      }
+     },
+     "match": {
+      "cmd": [
+       "sed"
+      ],
+      "flags_any": [
+       "-i",
+       "--in-place"
+      ]
+     },
+     "render": [
+      "sed",
+      "-i",
+      {
+       "ref": "script"
+      },
+      {
+       "splat": "files"
+      }
+     ]
+    },
+    {
+     "when": {
+      "dialect": {
+       "sed": "bsd"
+      }
+     },
+     "match": {
+      "cmd": [
+       "sed"
+      ],
+      "flags_any": [
+       "-i"
+      ],
+      "takes_value": [
+       "-i"
+      ],
+      "evidence": [
+       {
+        "after_flag": "-i",
+        "token": ""
+       }
+      ]
+     },
+     "render": [
+      "sed",
+      "-i",
+      "",
+      {
+       "ref": "script"
+      },
+      {
+       "splat": "files"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "net.listening_sockets",
+   "risk": "read",
+   "forms": [
+    {
+     "when": {
+      "family": "debian"
+     },
+     "match": {
+      "cmd": [
+       "ss"
+      ],
+      "flags_all": [
+       "-t",
+       "-u",
+       "-l",
+       "-n",
+       "-p"
+      ]
+     },
+     "render": [
+      "ss",
+      "-tulnp"
+     ],
+     "root": "optional"
+    },
+    {
+     "when": {
+      "family": "fedora"
+     },
+     "match": {
+      "cmd": [
+       "ss"
+      ],
+      "flags_all": [
+       "-t",
+       "-u",
+       "-l",
+       "-n",
+       "-p"
+      ]
+     },
+     "render": [
+      "ss",
+      "-tulnp"
+     ],
+     "root": "optional"
+    },
+    {
+     "when": {
+      "family": "macos"
+     },
+     "match": {
+      "cmd": [
+       "lsof"
+      ],
+      "flags_all": [
+       "-i",
+       "-P",
+       "-n"
+      ]
+     },
+     "render": [
+      "lsof",
+      "-i",
+      "-P",
+      "-n"
+     ],
+     "root": "optional",
+     "fidelity": "approximate",
+     "note": {
+      "en": "Output format differs from ss; scripts parsing it will break. Needs sudo to see other users' sockets. Also lists non-listening connections.",
+      "ko": "출력 형식이 ss와 달라 파싱 스크립트는 동작하지 않습니다. 다른 사용자 소켓은 sudo가 필요하고, LISTEN 아닌 연결도 함께 나옵니다."
+     }
+    }
+   ]
+  }
+ ]
+}

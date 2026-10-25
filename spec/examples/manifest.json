@@ -1,0 +1,23 @@
+{
+  "format": "ush-rules-release",
+  "rules_schema": 1,
+  "version": 2026102601,
+  "released_at": "2026-10-26T09:00:00Z",
+  "expires": "2027-01-24T09:00:00Z",
+  "min_client": "0.1.0",
+  "signing": { "scheme": "minisign", "roles": ["release"] },
+  "source_commit": "0000000000000000000000000000000000000000",
+  "files": [
+    {
+      "path": "rules.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size": 48213
+    }
+  ],
+  "stats": {
+    "concepts": 20,
+    "intents": 12,
+    "families": ["debian", "fedora", "macos"]
+  },
+  "key_rotation": null
+}

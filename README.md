@@ -31,7 +31,7 @@ fidelity: exact
 No cloud call. No model in the loop. The same input always gives the same answer, and when `ush`
 doesn't know something it says so instead of guessing.
 
-> **Status: alpha (v0.0.1).** Tested on Ubuntu 22.04 with bash and zsh. On macOS, CI on a GitHub
+> **Status: alpha (v0.1.0a1).** Tested on Ubuntu 22.04 with bash and zsh. On macOS, CI on a GitHub
 > runner (macOS 26, arm64, zsh 5.9) confirms host detection, translation planning and the zsh hook
 > — but nothing has been *executed* on a Mac yet, and nobody has used it on a laptop. See
 > [Status](#status--what-is-and-isnt-verified). Rule coverage is deliberately tiny so far.
@@ -117,7 +117,7 @@ planning — no package was ever installed through `ush` on a Mac.
 - **Real `minisign`** — signature checking is implemented from the format spec and tested
   against our own signer; it has not been run against the official binary.
 
-**Coverage today (this is v0.0.1, and small on purpose):** 6 package concepts, 2 services,
+**Coverage today (this is an alpha, and small on purpose):** 6 package concepts, 2 services,
 6 operations — `install`, `remove`, `update` of the package index, `service start`,
 `sed -i`, and "what's listening" (`ss` ↔ `lsof`). Missing: `upgrade`, `search`, casks,
 `service stop/enable/status`, `journalctl`, `ip`, `free`, flags beyond the basics. If a flag
@@ -171,7 +171,7 @@ Input is parsed against the forms of the family it *looks* like; output is rende
 form of the host. Ambiguous parses (`sed -i ''` fits both dialects) are resolved by explicit
 evidence, then by "assume the host's own dialect", and refused otherwise. Output is an argv
 list executed without a shell, so nothing in a rule or a package name is ever interpreted by one.
-Details: [`spec/SPEC.md`](spec/SPEC.md).
+Details: [`spec/SPEC.md`](https://github.com/neodaiki/babelsh/blob/main/spec/SPEC.md).
 </details>
 
 <details><summary>Shell hook details</summary>
@@ -223,5 +223,5 @@ Client code is stdlib-only (Python 3.8+ intended; only 3.10 has been run). `comp
 
 ## License
 
-[MIT](LICENSE). `babelsh/ed25519.py` is adapted from the RFC 8032 reference code (IETF Trust
+[MIT](https://github.com/neodaiki/babelsh/blob/main/LICENSE). `babelsh/ed25519.py` is adapted from the RFC 8032 reference code (IETF Trust
 Revised BSD terms; see the file header).

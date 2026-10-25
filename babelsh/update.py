@@ -30,7 +30,8 @@ BUNDLED_TRUSTED_KEYS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                                     "trusted_keys.json")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _FILENAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
-_SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
+_SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:(a|b|rc)(\d+))?$")
+_STAGE_RANK = {"a": 0, "b": 1, "rc": 2, None: 3}
 _TS_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 _ROLE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
 
@@ -126,7 +127,12 @@ def fetch_url(url, cap, timeout=15):
 # ---------------------------------------------------------------------------
 
 def _semver(text):
-    return tuple(int(p) for p in text.split("."))
+    """Sortable key for 'X.Y.Z' with an optional a/b/rc pre-release suffix (0.1.0a1 < 0.1.0)."""
+    m = _SEMVER.match(text)
+    if not m:
+        raise UpdateError("unsupported version string %r" % (text,))
+    major, minor, patch, stage, num = m.groups()
+    return (int(major), int(minor), int(patch), _STAGE_RANK[stage], int(num or 0))
 
 
 def _ts(value, field):
@@ -151,7 +157,7 @@ def validate_manifest(m):
         if not isinstance(m.get(field), int) or isinstance(m.get(field), bool) or m[field] < 1:
             raise UpdateError("manifest %s must be a positive integer" % field)
     if not isinstance(m.get("min_client"), str) or not _SEMVER.match(m["min_client"]):
-        raise UpdateError("manifest min_client must be a semantic version like 0.1.0")
+        raise UpdateError("manifest min_client must be a version like 0.1.0 or 0.1.0a1")
     m["_released"] = _ts(m.get("released_at"), "released_at")
     m["_expires"] = _ts(m.get("expires"), "expires")
     signing = m.get("signing")

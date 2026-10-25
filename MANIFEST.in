@@ -1,0 +1,5 @@
+# Make the sdist self-contained: the tests need the rule sources and the compiler.
+graft spec
+graft compiler
+graft tests
+global-exclude __pycache__ *.py[cod] .DS_Store

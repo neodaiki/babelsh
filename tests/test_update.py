@@ -406,6 +406,30 @@ class UpdateFlowTests(unittest.TestCase):
         self.assertEqual(res.status, "installed")
 
 
+class VersionKeyTests(unittest.TestCase):
+    def test_prerelease_ordering(self):
+        order = ["0.1.0a1", "0.1.0a2", "0.1.0b1", "0.1.0rc1", "0.1.0", "0.1.1a1", "0.2.0"]
+        keys = [upd._semver(v) for v in order]
+        self.assertEqual(keys, sorted(keys))
+        self.assertEqual(len(set(keys)), len(keys))
+
+    def test_rejects_garbage(self):
+        for bad in ("1.0", "1.0.0.dev1", "v1.0.0", "1.0.0-beta", ""):
+            with self.assertRaises(upd.UpdateError, msg=bad):
+                upd._semver(bad)
+
+    def test_alpha_client_is_older_than_the_final_release_it_precedes(self):
+        env = Env(self)
+        out = env.release(5, min_client="0.1.0")
+        with self.assertRaisesRegex(upd.UpdateError, "needs ush >= 0.1.0"):
+            env.update(out)          # default client_version is the current 0.1.0a1
+        self.assertEqual(env.update(out, client_version="0.1.0").status, "installed")
+
+    def test_alpha_manifest_min_client_is_accepted(self):
+        env = Env(self)
+        self.assertEqual(env.update(env.release(6, min_client="0.1.0a1")).status, "installed")
+
+
 class CliTests(unittest.TestCase):
     def setUp(self):
         self.env = Env(self)

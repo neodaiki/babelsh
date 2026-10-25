@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "babelsh"
+dynamic = ["version"]
+description = "The Babel fish for your shell: type apt, dnf, brew, systemctl or sed -i on Debian, Fedora or macOS and run the host's native equivalent. Rule-based (no LLM), signed rule updates."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "neodaiki" }]
+keywords = ["shell", "cli", "apt", "dnf", "homebrew", "systemctl", "linux", "macos", "translator"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+dependencies = []          # standard library only
+
+[project.urls]
+Homepage = "https://github.com/neodaiki/babelsh"
+Source = "https://github.com/neodaiki/babelsh"
+Issues = "https://github.com/neodaiki/babelsh/issues"
+
+[project.scripts]
+ush = "babelsh.cli:main"
+
+[tool.setuptools]
+packages = ["babelsh"]
+
+[tool.setuptools.package-data]
+babelsh = ["data/*.json"]
+
+[tool.setuptools.dynamic]
+version = { attr = "babelsh._version.__version__" }

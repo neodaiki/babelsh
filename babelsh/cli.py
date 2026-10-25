@@ -186,15 +186,23 @@ def cmd_hostinfo(_args, environ=None):
     return 0
 
 
+def _launcher():
+    """How the generated hook should start ush: the checkout's bin/ush when running from a
+    source tree, otherwise `python -m babelsh` (pip-installed: there is no bin/ush)."""
+    src_bin = os.path.abspath(os.path.join(HERE, "..", "bin", "ush"))
+    if os.path.isfile(src_bin):
+        return [sys.executable, src_bin]
+    return [sys.executable, "-m", "babelsh"]
+
+
 def cmd_init(args, environ=None):
     environ = os.environ if environ is None else environ
     if len(args) != 1:
         sys.stderr.write("usage: ush init bash|zsh\n")
         return 2
     rules = load_rules(find_rules_path(environ))
-    bin_path = os.path.abspath(os.path.join(HERE, "..", "bin", "ush"))
     try:
-        sys.stdout.write(generate(args[0], rules, sys.executable, bin_path))
+        sys.stdout.write(generate(args[0], rules, _launcher()))
     except ValueError as exc:
         sys.stderr.write("ush: %s\n" % exc)
         return 2

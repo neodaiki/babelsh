@@ -51,6 +51,14 @@ jobs:
       - name: Golden translation cases
         run: python tests/run_golden.py
 
+      - name: Package installs and runs from outside the checkout
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/python" -m pip install .
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/venv/bin/ush" explain "dnf install -y htop"
+          "$RUNNER_TEMP/venv/bin/ush" init zsh | grep -- "-m babelsh"
+
       - name: Bundled rules are up to date
         run: |
           python compiler/compile_rules.py spec/examples -o "$RUNNER_TEMP/rules.json"

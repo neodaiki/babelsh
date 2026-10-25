@@ -205,21 +205,29 @@ class HookScenarios(object):
         cls.sandbox = sandbox
         cls.hook = os.path.join(cls.tmp, "hook." + cls.SHELL)
         with open(cls.hook, "w") as fh:
-            fh.write(generate(cls.SHELL, RULES, sys.executable, BIN))
+            fh.write(generate(cls.SHELL, RULES, [sys.executable, BIN]))
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls.tmp)
 
-    def sh(self, script, env=None, prelude=""):
+    def sh(self, script, env=None, prelude="", hook=None):
         e = {"PATH": self.sandbox, "USH_FORCE": "1", "USH_RULES": os.path.join(ROOT, "babelsh", "data", "rules.json"),
              "USH_HOST": json.dumps(self.MAC), "USH_DRY_RUN": "1", "NO_COLOR": "1"}
         e.update(env or {})
         res = subprocess.run([shutil.which(self.SHELL)] + self.SHELL_ARGS + ["-c",
-                              prelude + "source %s\n%s" % (self.hook, script)],
+                              prelude + "source %s\n%s" % (hook or self.hook, script)],
                              env=e, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                              universal_newlines=True, start_new_session=True, timeout=30)
         return res.returncode, res.stdout, res.stderr
+
+    def test_module_launcher_form_works_without_bin_ush(self):
+        # What a pip-installed babelsh generates: `python -m babelsh`, no checkout path.
+        hook = os.path.join(self.tmp, "module-hook." + self.SHELL)
+        with open(hook, "w") as fh:
+            fh.write(generate(self.SHELL, RULES, [sys.executable, "-m", "babelsh"]))
+        rc, out, _ = self.sh("apt install -y nginx", env={"PYTHONPATH": ROOT}, hook=hook)
+        self.assertEqual(out, "ush-dry-run: brew install nginx\n")
 
     def test_generated_hook_is_valid_bash(self):
         res = subprocess.run([shutil.which(self.SHELL), "-n", self.hook])

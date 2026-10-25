@@ -156,7 +156,7 @@ def main():
         cast.write("\x1b[2J\x1b[H$ ")
 
         # --- on camera
-        source = "PyPI" if args.package == "babelsh" else "a local checkout"
+        source = "a local checkout" if os.path.exists(args.package) else "PyPI"
         comment(child, "babelsh is installed from %s and hooked into bash. This machine: Ubuntu." % source)
         comment(child, "Fedora habit:")
         run_with_confirmation(child, "dnf install -y htop", "n")

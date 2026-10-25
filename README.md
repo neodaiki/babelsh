@@ -12,21 +12,24 @@ shell, notices when a command doesn't belong on this host, shows you the native 
 and — only after you say yes — runs it.
 
 ```console
-# on Ubuntu, with Fedora and macOS muscle memory
-$ dnf install -y htop
+$ dnf install -y htop                  # on Ubuntu, with a Fedora habit
 ush: dnf install -y htop  ->  sudo apt install -y htop   [exact, modify]
-Run? [y/N] y
-
-$ brew install htop
-ush: brew install htop  ->  sudo apt install htop   [exact, modify]
 Run? [y/N] n
 ush: cancelled
 
-$ ush explain sed -i '' 's/foo/bar/' app.conf      # BSD sed syntax on a GNU box
-status:   translated
-command:  sed -i s/foo/bar/ app.conf
-fidelity: exact
+$ sed -i '' 's/foo/bar/' app.conf      # a Mac habit, on GNU sed
+ush: sed -i '' s/foo/bar/ app.conf  ->  sed -i s/foo/bar/ app.conf   [exact, modify]
+Run? [y/N] y
 ```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/neodaiki/babelsh/main/docs/demo.svg" alt="Terminal recording: dnf and brew commands translated to apt on Ubuntu, BSD-style sed -i translated for GNU sed, then a simulated Mac host profile" width="780">
+</p>
+
+<sub>Recorded from a real interactive bash session on Ubuntu with babelsh 0.1.0a2 installed from
+PyPI. The keystrokes are scripted; everything printed is real output (see
+<a href="https://github.com/neodaiki/babelsh/blob/main/tools/record_demo.py"><code>tools/record_demo.py</code></a>).
+The "pretending to be a Mac" part uses a <b>simulated</b> host profile, not a real Mac.</sub>
 
 No cloud call. No model in the loop. The same input always gives the same answer, and when `ush`
 doesn't know something it says so instead of guessing.

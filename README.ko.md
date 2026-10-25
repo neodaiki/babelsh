@@ -16,6 +16,14 @@ ush: dnf install -y htop  ->  sudo apt install -y htop   [exact, modify]
 Run? [y/N]
 ```
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/neodaiki/babelsh/main/docs/demo.svg" alt="터미널 녹화: Ubuntu에서 dnf·brew 명령이 apt로, BSD식 sed -i가 GNU sed용으로 번역되고, 가상의 Mac 호스트 프로필 데모가 이어집니다" width="780">
+</p>
+
+<sub>PyPI에서 설치한 babelsh 0.1.0a2로 Ubuntu의 실제 대화형 bash 세션을 녹화했습니다. 키 입력은
+스크립트이고 출력은 모두 실제 결과입니다(<a href="https://github.com/neodaiki/babelsh/blob/main/tools/record_demo.py"><code>tools/record_demo.py</code></a>).
+"Mac인 척" 부분은 <b>시뮬레이션</b>한 호스트 프로필이며 실제 Mac이 아닙니다.</sub>
+
 클라우드 호출도, AI 모델도 없습니다. 같은 입력은 항상 같은 결과를 내고, 모르는 것은 추측하지
 않고 모른다고 말합니다.
 

@@ -1,5 +1,7 @@
 # babelsh — the Babel fish for your shell
 
+[![CI](https://github.com/neodaiki/babelsh/actions/workflows/ci.yml/badge.svg)](https://github.com/neodaiki/babelsh/actions/workflows/ci.yml)
+
 **Type the commands you already know. Run them on whatever OS you're on.**
 
 *The project is **babelsh**; the command you type is **`ush`** (Universal SHell).*
@@ -29,8 +31,9 @@ fidelity: exact
 No cloud call. No model in the loop. The same input always gives the same answer, and when `ush`
 doesn't know something it says so instead of guessing.
 
-> **Status: alpha (v0.0.1).** Works and is tested on Ubuntu 22.04 with bash and zsh. The macOS side is
-> implemented from documentation and **has not been run on a real Mac yet** — see
+> **Status: alpha (v0.0.1).** Tested on Ubuntu 22.04 with bash and zsh. On macOS, CI on a GitHub
+> runner (macOS 26, arm64, zsh 5.9) confirms host detection, translation planning and the zsh hook
+> — but nothing has been *executed* on a Mac yet, and nobody has used it on a laptop. See
 > [Status](#status--what-is-and-isnt-verified). Rule coverage is deliberately tiny so far.
 
 ## Why this exists
@@ -97,13 +100,20 @@ chaining an existing handler), confirmation prompts, signed-update verification 
 rollback, oversize, path traversal, crash safety), Ed25519 against RFC 8032 and an independent
 library.
 
+**Verified on a real macOS CI runner** (GitHub `macos-latest`: macOS 26, arm64, Python 3.12,
+zsh 5.9, preinstalled Homebrew): all 121 tests pass (14 skipped, see below), including the 14
+zsh-hook scenarios; real host detection reports `family: macos`, `brew_prefix: /opt/homebrew`,
+BSD `sed`; and `ush explain` produces the expected plans there, e.g. `apt install -y nginx` →
+`brew install nginx`, `ss -tulnp` → `lsof -i -P -n`, `sed -i` → `sed -i ''`. Latest results:
+the CI badge above. Caveat: that is a CI virtual machine, and everything is dry-run
+planning — no package was ever installed through `ush` on a Mac.
+
 **Not verified yet:**
-- **Anything on a real Mac.** macOS expectations come from documentation; they are exercised
-  against *simulated* host profiles only. Two examples worth double-checking:
-  `sudo brew services start` and the output of `lsof -i -P -n`.
-- **zsh on macOS** (the default shell there) — the zsh hook passes its tests on Linux
-  (zsh 5.8); it has not run on macOS's zsh.
-- **macOS system bash 3.2** has no `command_not_found_handle`, so the bash hook can't work there.
+- **Executing translations on macOS** and what they do for a person: `sudo brew services start`
+  semantics, the real output of `lsof -i -P -n` versus `ss -tulnp`, the interactive prompts in a
+  real terminal, a user's actual dotfiles and PATH.
+- **macOS system bash 3.2** has no `command_not_found_handle`, so the bash hook can't work
+  there (CI skips those 14 tests on purpose). Use zsh, or Homebrew's bash 5.
 - **Real `minisign`** — signature checking is implemented from the format spec and tested
   against our own signer; it has not been run against the official binary.
 
@@ -119,8 +129,9 @@ Debian/Fedora/macOS only; no Arch, SUSE, Alpine or BSD yet.
 
 ### Help wanted
 
-1. **A real Mac.** Clone, run `python3 tests/run_golden.py` and `bin/ush explain …`, and open an
-   issue with anything that differs. This is the single most valuable contribution right now.
+1. **A real Mac, used by a person.** CI proves the plans; it can't tell us whether they feel
+   right. Clone, hook it into zsh, use it for a day with `USH_DRY_RUN=1`, then without, and open
+   an issue with anything surprising. This is the single most valuable contribution right now.
 2. **Rules.** Adding a package is one line — see below.
 3. **Fedora** users: the Fedora side has the least real-world mileage.
 

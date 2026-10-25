@@ -44,12 +44,13 @@ Run? [y/N]
 ## 지금 확인된 것 / 안 된 것
 
 - **확인됨**(Ubuntu 22.04, 자동 테스트 121개 + 골든 30개): 파서, 규칙 검증, 번역 로직, bash·zsh 훅, 확인 프롬프트, 서명 업데이트 검증.
-- **미확인**: **실제 Mac 전체**(macOS의 zsh 포함. zsh 훅은 Linux zsh 5.8에서만 통과), macOS 기본 bash 3.2(`command_not_found_handle` 없음), 공식 `minisign` 바이너리와의 호환.
+- **실제 macOS CI 러너에서 확인됨**(GitHub `macos-latest`: macOS 26, arm64, zsh 5.9): 테스트 121개 통과(14개는 bash 3.2라서 의도적으로 건너뜀), zsh 훅 시나리오 14개 통과, 호스트 감지(`brew_prefix`, BSD `sed`)와 번역 계획이 기대대로 나옴. 단, CI 가상머신에서의 dry-run일 뿐 Mac에서 실제로 설치를 실행한 적은 없습니다.
+- **미확인**: macOS에서 **번역한 명령을 실제로 실행**했을 때의 동작(`sudo brew services start`, `lsof` 출력 등), 실제 터미널 프롬프트, 사용자 환경. macOS 기본 bash 3.2에서는 훅이 동작하지 않으니 zsh나 Homebrew bash 5를 쓰세요. 공식 `minisign` 바이너리와의 호환도 미확인.
 - **범위**: 패키지 6개, 서비스 2개, 작업 6가지(install, remove, 인덱스 갱신, 서비스 시작, `sed -i`, 열린 포트 보기). 아직 `upgrade`, `search`, `journalctl`, `ip`, `free` 등은 없습니다.
 
 ## 도와주세요
 
-1. **실제 Mac**에서 `python3 tests/run_golden.py`와 `bin/ush explain …`를 돌려 보고 다른 점을 이슈로 알려 주세요. 지금 가장 값진 기여입니다.
+1. **Mac을 실제로 쓰는 분**: zsh에 훅을 걸고 `USH_DRY_RUN=1`로 하루, 그다음 실제로 써 보고 이상한 점을 이슈로 알려 주세요. CI는 계획이 맞는지만 보장하고 쓸 만한지는 알려 주지 못합니다. 지금 가장 값진 기여입니다.
 2. **규칙 추가**: 패키지 하나는 한 줄입니다 — `openssl_dev: { debian: libssl-dev, fedora: openssl-devel, macos: "openssl@3" }`
 3. Fedora 사용자의 실사용 피드백.
 

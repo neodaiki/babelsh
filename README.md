@@ -29,7 +29,7 @@ fidelity: exact
 No cloud call. No model in the loop. The same input always gives the same answer, and when `ush`
 doesn't know something it says so instead of guessing.
 
-> **Status: alpha (v0.0.1).** Works and is tested on Ubuntu 22.04 with bash. The macOS side is
+> **Status: alpha (v0.0.1).** Works and is tested on Ubuntu 22.04 with bash and zsh. The macOS side is
 > implemented from documentation and **has not been run on a real Mac yet** — see
 > [Status](#status--what-is-and-isnt-verified). Rule coverage is deliberately tiny so far.
 
@@ -75,12 +75,13 @@ bin/ush hostinfo                          # what ush detected about this machine
 bin/ush explain dnf install -y htop       # show the translation; run nothing
 ```
 
-Hook it into bash (bash 4+; zsh output is generated but **untested**):
+Hook it into your shell (bash 4+ or zsh; both pass the same hook tests on Linux):
 
 ```sh
 mkdir -p ~/.config/ush
-bin/ush init bash > ~/.config/ush/hook.bash
-echo 'source ~/.config/ush/hook.bash' >> ~/.bashrc
+bin/ush init bash > ~/.config/ush/hook.bash && echo 'source ~/.config/ush/hook.bash' >> ~/.bashrc
+# or, for zsh:
+bin/ush init zsh  > ~/.config/ush/hook.zsh  && echo 'source ~/.config/ush/hook.zsh'  >> ~/.zshrc
 ```
 
 Start with `export USH_DRY_RUN=1` if you'd like to see what it would do before it does anything.
@@ -89,10 +90,10 @@ Start with `export USH_DRY_RUN=1` if you'd like to see what it would do before i
 
 Honest list, because a tool that touches your package manager should be.
 
-**Verified (automated, 107 tests + 30 golden translation cases, run on Ubuntu 22.04):**
+**Verified (automated, 121 tests + 30 golden translation cases, run on Ubuntu 22.04):**
 tokenizer and shell-syntax handling, rule validation, translation logic, host probing on
-Linux, the bash hook (command-not-found handler, `sudo` and `sed` wrappers, chaining an
-existing handler), confirmation prompts, signed-update verification (tamper, wrong key,
+Linux, the bash 5.1 and zsh 5.8 hooks (command-not-found handler, `sudo` and `sed` wrappers,
+chaining an existing handler), confirmation prompts, signed-update verification (tamper, wrong key,
 rollback, oversize, path traversal, crash safety), Ed25519 against RFC 8032 and an independent
 library.
 
@@ -100,7 +101,8 @@ library.
 - **Anything on a real Mac.** macOS expectations come from documentation; they are exercised
   against *simulated* host profiles only. Two examples worth double-checking:
   `sudo brew services start` and the output of `lsof -i -P -n`.
-- **zsh** (the macOS default shell) — the hook is generated, never run.
+- **zsh on macOS** (the default shell there) — the zsh hook passes its tests on Linux
+  (zsh 5.8); it has not run on macOS's zsh.
 - **macOS system bash 3.2** has no `command_not_found_handle`, so the bash hook can't work there.
 - **Real `minisign`** — signature checking is implemented from the format spec and tested
   against our own signer; it has not been run against the official binary.
@@ -141,7 +143,7 @@ declared (so a flag can't be dropped by omission).
 ## Roadmap
 
 - Validate on real macOS; run CI on Linux **and** macOS runners
-- zsh hook verified; a hook strategy for macOS bash 3.2
+- zsh hook verified on macOS; a documented answer for macOS bash 3.2 (use zsh, or Homebrew bash 5)
 - Much wider rule coverage (the 20 commands people actually type)
 - Per-entry rule validation instead of all-or-nothing
 - CI that checks a proposed package really exists on each OS (`apt-cache`, `dnf info`, `brew info`)

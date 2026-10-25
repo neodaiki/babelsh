@@ -43,8 +43,8 @@ Run? [y/N]
 
 ## 지금 확인된 것 / 안 된 것
 
-- **확인됨**(Ubuntu 22.04, 자동 테스트 107개 + 골든 30개): 파서, 규칙 검증, 번역 로직, bash 훅, 확인 프롬프트, 서명 업데이트 검증.
-- **미확인**: **실제 Mac 전체**, zsh 훅, macOS 기본 bash 3.2(`command_not_found_handle` 없음), 공식 `minisign` 바이너리와의 호환.
+- **확인됨**(Ubuntu 22.04, 자동 테스트 121개 + 골든 30개): 파서, 규칙 검증, 번역 로직, bash·zsh 훅, 확인 프롬프트, 서명 업데이트 검증.
+- **미확인**: **실제 Mac 전체**(macOS의 zsh 포함. zsh 훅은 Linux zsh 5.8에서만 통과), macOS 기본 bash 3.2(`command_not_found_handle` 없음), 공식 `minisign` 바이너리와의 호환.
 - **범위**: 패키지 6개, 서비스 2개, 작업 6가지(install, remove, 인덱스 갱신, 서비스 시작, `sed -i`, 열린 포트 보기). 아직 `upgrade`, `search`, `journalctl`, `ip`, `free` 등은 없습니다.
 
 ## 도와주세요

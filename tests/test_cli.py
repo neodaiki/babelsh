@@ -173,6 +173,11 @@ class HandlePlanTests(unittest.TestCase):
 class BashHookTests(unittest.TestCase):
     """Drives the real generated hook with a sandboxed PATH on a pretend-macOS host."""
 
+    SHELL = "bash"
+    SHELL_ARGS = ["--norc", "--noprofile"]
+    HANDLER = "command_not_found_handle"
+    NOT_FOUND = "gti: command not found"
+
     MAC = {"family": "macos", "os_id": "macos-14", "arch": "arm64", "dialect": {"sed": "bsd"},
            "has": {"brew": True, "sudo": True, "sed": True, "lsof": True}, "is_root": False}
 
@@ -188,9 +193,9 @@ class BashHookTests(unittest.TestCase):
                 fh.write('#!/bin/sh\necho "REAL-%s $*"\n' % name.upper())
             os.chmod(path, 0o755)
         cls.sandbox = sandbox
-        cls.hook = os.path.join(cls.tmp, "hook.bash")
+        cls.hook = os.path.join(cls.tmp, "hook." + cls.SHELL)
         with open(cls.hook, "w") as fh:
-            fh.write(generate("bash", RULES, sys.executable, BIN))
+            fh.write(generate(cls.SHELL, RULES, sys.executable, BIN))
 
     @classmethod
     def tearDownClass(cls):
@@ -200,14 +205,14 @@ class BashHookTests(unittest.TestCase):
         e = {"PATH": self.sandbox, "USH_FORCE": "1", "USH_RULES": os.path.join(ROOT, "babelsh", "data", "rules.json"),
              "USH_HOST": json.dumps(self.MAC), "USH_DRY_RUN": "1", "NO_COLOR": "1"}
         e.update(env or {})
-        res = subprocess.run([shutil.which("bash"), "--norc", "--noprofile", "-c",
+        res = subprocess.run([shutil.which(self.SHELL)] + self.SHELL_ARGS + ["-c",
                               prelude + "source %s\n%s" % (self.hook, script)],
                              env=e, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                              universal_newlines=True, start_new_session=True, timeout=30)
         return res.returncode, res.stdout, res.stderr
 
     def test_generated_hook_is_valid_bash(self):
-        res = subprocess.run([shutil.which("bash"), "-n", self.hook])
+        res = subprocess.run([shutil.which(self.SHELL), "-n", self.hook])
         self.assertEqual(res.returncode, 0)
 
     def test_foreign_command_is_translated(self):
@@ -237,10 +242,10 @@ class BashHookTests(unittest.TestCase):
     def test_typo_is_a_normal_command_not_found(self):
         rc, out, err = self.sh("gti status")
         self.assertEqual(rc, 127)
-        self.assertIn("gti: command not found", err)
+        self.assertIn(self.NOT_FOUND, err)
 
     def test_previous_handler_is_chained(self):
-        prelude = 'command_not_found_handle() { echo "PREV $1"; return 127; }\n'
+        prelude = '%s() { echo "PREV $1"; return 127; }\n' % self.HANDLER
         rc, out, _ = self.sh("gti status; apt install -y nginx", prelude=prelude)
         self.assertEqual(out, "PREV gti\nush-dry-run: brew install nginx\n")
 
@@ -268,6 +273,16 @@ class BashHookTests(unittest.TestCase):
     def test_shell_expanded_arguments_are_visible_to_ush(self):
         rc, out, _ = self.sh('P=nginx; apt install -y $P')
         self.assertEqual(out, "ush-dry-run: brew install nginx\n")
+
+
+@unittest.skipUnless(shutil.which("zsh"), "zsh not available")
+class ZshHookTests(BashHookTests):
+    """Same scenarios through the zsh hook."""
+
+    SHELL = "zsh"
+    SHELL_ARGS = ["-f"]
+    HANDLER = "command_not_found_handler"
+    NOT_FOUND = "command not found: gti"
 
 
 if __name__ == "__main__":

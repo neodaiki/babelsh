@@ -9,8 +9,8 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "compiler"))
 
 from compile_rules import compile_dir  # noqa: E402
-from ush import Rules, RulesError, to_shell, translate  # noqa: E402
-from ush.shellparse import ShellParseError, split  # noqa: E402
+from babelsh import Rules, RulesError, to_shell, translate  # noqa: E402
+from babelsh.shellparse import ShellParseError, split  # noqa: E402
 
 EXAMPLES = os.path.join(ROOT, "spec", "examples")
 
@@ -139,11 +139,11 @@ class SerializationTests(unittest.TestCase):
     def test_bundled_rules_match_a_fresh_compile(self):
         import json
         from compile_rules import dumps
-        path = os.path.join(ROOT, "ush", "data", "rules.json")
+        path = os.path.join(ROOT, "babelsh", "data", "rules.json")
         with open(path, encoding="utf-8") as fh:
             self.assertEqual(fh.read(), dumps(compile_dir(EXAMPLES)),
-                             "ush/data/rules.json is stale: run compiler/compile_rules.py "
-                             "spec/examples -o ush/data/rules.json")
+                             "babelsh/data/rules.json is stale: run compiler/compile_rules.py "
+                             "spec/examples -o babelsh/data/rules.json")
 
 
 class BehaviourTests(unittest.TestCase):

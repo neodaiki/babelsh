@@ -1,4 +1,4 @@
-# ush rules — schema & release manifest (draft 0)
+# babelsh rules (command: `ush`) — schema & release manifest (draft 0)
 
 Status: draft 1, 2026-10-26. Nothing here is implemented yet.
 

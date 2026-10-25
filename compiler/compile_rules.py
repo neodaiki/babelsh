@@ -12,7 +12,7 @@ import sys
 import yaml
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from ush.rules import KNOWN_FAMILIES, Rules, RulesError  # noqa: E402
+from babelsh.rules import KNOWN_FAMILIES, Rules, RulesError  # noqa: E402
 
 
 class CompileError(Exception):

@@ -160,7 +160,9 @@ def _exists(cmd):
 
 def cmd_explain(args, environ=None):
     environ = os.environ if environ is None else environ
-    text = " ".join(args)
+    # One argument = a whole command line ("apt install x && y"); several = already split by the
+    # user's shell, so keep their boundaries (an empty '' argument must survive).
+    text = args[0] if len(args) == 1 else shlex.join(args)
     rules = load_rules(find_rules_path(environ))
     host = get_host(rules, environ)
     plan = translate(text, host, rules, pick_lang(environ))

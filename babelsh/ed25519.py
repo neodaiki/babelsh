@@ -3,7 +3,9 @@
 verify() is what the client uses (at `ush update` time, never on the command path).
 sign() exists for release tooling and tests; it is NOT constant-time and must not be used
 with a production key on a shared machine: sign production releases with the real minisign.
-Adapted from the RFC 8032 section 6 reference implementation.
+Adapted from the Python reference implementation in RFC 8032, section 6. Code components of
+IETF RFCs are published under the IETF Trust's Revised BSD license
+(https://trustee.ietf.org/license-info); that notice applies to the adapted portions here.
 """
 import hashlib
 

@@ -20,7 +20,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "compiler"))
 
 import release  # noqa: E402
-from ush import cli, ed25519, load_rules, minisign, translate, update as upd  # noqa: E402
+from babelsh import cli, ed25519, load_rules, minisign, translate, update as upd  # noqa: E402
 
 EXAMPLES = os.path.join(ROOT, "spec", "examples")
 HOST = {"family": "macos", "dialect": {"sed": "bsd"}, "has": {"brew": True, "sudo": True},

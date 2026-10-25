@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(ROOT, "compiler"))
 import json  # noqa: E402
 
 from compile_rules import compile_dir, dumps  # noqa: E402
-from ush import Rules, to_shell, translate  # noqa: E402
+from babelsh import Rules, to_shell, translate  # noqa: E402
 
 SPEC = os.path.join(ROOT, "spec")
 

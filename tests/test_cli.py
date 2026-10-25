@@ -13,10 +13,10 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "compiler"))
 
 from compile_rules import compile_dir  # noqa: E402
-from ush import Plan, Rules, Step, translate  # noqa: E402
-from ush.cli import _UI, handle_plan  # noqa: E402
-from ush.hook import generate  # noqa: E402
-from ush.host import detect_family, probe_host  # noqa: E402
+from babelsh import Plan, Rules, Step, translate  # noqa: E402
+from babelsh.cli import _UI, handle_plan  # noqa: E402
+from babelsh.hook import generate  # noqa: E402
+from babelsh.host import detect_family, probe_host  # noqa: E402
 
 EXAMPLES = os.path.join(ROOT, "spec", "examples")
 BIN = os.path.join(ROOT, "bin", "ush")
@@ -68,6 +68,29 @@ class HostProbeTests(unittest.TestCase):
     def test_missing_tool_has_no_dialect(self):
         h = self.probe("Linux", {"ID": "debian", "VERSION_ID": "12"}, present=("sudo",))
         self.assertEqual(h["dialect"], {})
+
+
+class ExplainTests(unittest.TestCase):
+    MAC = {"family": "macos", "dialect": {"sed": "bsd"}, "has": {"brew": True, "sudo": True},
+           "is_root": False}
+
+    def explain(self, args):
+        import contextlib
+        from babelsh.cli import cmd_explain
+        out = io.StringIO()
+        env = {"USH_HOST": json.dumps(self.MAC), "USH_RULES": os.path.join(ROOT, "babelsh", "data", "rules.json")}
+        with contextlib.redirect_stdout(out):
+            cmd_explain(args, env)
+        return out.getvalue()
+
+    def test_split_arguments_keep_their_boundaries(self):
+        # `ush explain sed -i '' s/a/b/ f` arrives as separate argv items including ""
+        self.assertIn("command:  sed -i '' s/a/b/ f", self.explain(["sed", "-i", "s/a/b/", "f"]))
+        self.assertIn("status:   passthrough", self.explain(["sed", "-i", "", "s/a/b/", "f"]))
+
+    def test_single_argument_is_a_whole_command_line(self):
+        out = self.explain(["apt install -y nginx && systemctl start nginx"])
+        self.assertIn("brew install nginx && brew services start nginx", out)
 
 
 class HandlePlanTests(unittest.TestCase):
@@ -174,7 +197,7 @@ class BashHookTests(unittest.TestCase):
         shutil.rmtree(cls.tmp)
 
     def sh(self, script, env=None, prelude=""):
-        e = {"PATH": self.sandbox, "USH_FORCE": "1", "USH_RULES": os.path.join(ROOT, "ush", "data", "rules.json"),
+        e = {"PATH": self.sandbox, "USH_FORCE": "1", "USH_RULES": os.path.join(ROOT, "babelsh", "data", "rules.json"),
              "USH_HOST": json.dumps(self.MAC), "USH_DRY_RUN": "1", "NO_COLOR": "1"}
         e.update(env or {})
         res = subprocess.run([shutil.which("bash"), "--norc", "--noprofile", "-c",

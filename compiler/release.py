@@ -22,8 +22,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from compile_rules import compile_dir, dumps  # noqa: E402
-from ush import ed25519  # noqa: E402
-from ush._version import __version__  # noqa: E402
+from babelsh import ed25519  # noqa: E402
+from babelsh._version import __version__  # noqa: E402
 
 TS_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 

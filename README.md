@@ -70,22 +70,26 @@ doesn't know something it says so instead of guessing.
 
 ## Try it
 
-Needs Python 3.8+ (standard library only). There is no PyPI package yet.
+Needs Python 3.8+ (standard library only). `babelsh` is on PyPI as an **alpha** (the only
+release so far is `0.1.0a1`):
 
 ```sh
-git clone <this repo> && cd babelsh
-bin/ush hostinfo                          # what ush detected about this machine
-bin/ush explain dnf install -y htop       # show the translation; run nothing
+pipx install babelsh        # macOS: `brew install pipx` first; or: pip install babelsh
+ush hostinfo                          # what ush detected about this machine
+ush explain dnf install -y htop       # show the translation; run nothing
 ```
 
 Hook it into your shell (bash 4+ or zsh; both pass the same hook tests on Linux):
 
 ```sh
 mkdir -p ~/.config/ush
-bin/ush init bash > ~/.config/ush/hook.bash && echo 'source ~/.config/ush/hook.bash' >> ~/.bashrc
+ush init bash > ~/.config/ush/hook.bash && echo 'source ~/.config/ush/hook.bash' >> ~/.bashrc
 # or, for zsh:
-bin/ush init zsh  > ~/.config/ush/hook.zsh  && echo 'source ~/.config/ush/hook.zsh'  >> ~/.zshrc
+ush init zsh  > ~/.config/ush/hook.zsh  && echo 'source ~/.config/ush/hook.zsh'  >> ~/.zshrc
 ```
+
+Regenerate the hook after upgrading babelsh. Running from a checkout instead? Use
+`git clone https://github.com/neodaiki/babelsh && cd babelsh` and replace `ush` with `bin/ush`.
 
 Start with `export USH_DRY_RUN=1` if you'd like to see what it would do before it does anything.
 

@@ -57,14 +57,17 @@ Run? [y/N]
 
 ## 써 보기
 
-Python 3.8+ (표준 라이브러리만 사용). 아직 PyPI 패키지는 없습니다.
+Python 3.8+ (표준 라이브러리만 사용). PyPI에 **알파**로 올라가 있습니다(지금은 `0.1.0a1`뿐).
 
 ```sh
-bin/ush hostinfo                      # 이 머신에서 감지한 정보
-bin/ush explain dnf install -y htop   # 번역만 보여 주고 실행은 안 함
-mkdir -p ~/.config/ush && bin/ush init bash > ~/.config/ush/hook.bash
-echo 'source ~/.config/ush/hook.bash' >> ~/.bashrc
+pipx install babelsh                  # macOS는 먼저 `brew install pipx`. 또는 pip install babelsh
+ush hostinfo                          # 이 머신에서 감지한 정보
+ush explain dnf install -y htop       # 번역만 보여 주고 실행은 안 함
+mkdir -p ~/.config/ush && ush init zsh > ~/.config/ush/hook.zsh   # bash면 `ush init bash`
+echo 'source ~/.config/ush/hook.zsh' >> ~/.zshrc
 ```
+
+체크아웃에서 직접 실행하려면 위 명령의 `ush`를 `bin/ush`로 바꾸세요. babelsh를 업그레이드한 뒤에는 훅을 다시 생성하세요.
 
 처음엔 `export USH_DRY_RUN=1`로 시작해 무엇을 실행할지 먼저 확인해 보세요.
 설계 문서는 [`spec/SPEC.md`](spec/SPEC.md)에 있습니다.

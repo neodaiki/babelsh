@@ -19,7 +19,7 @@ Run? [y/N]
 클라우드 호출도, AI 모델도 없습니다. 같은 입력은 항상 같은 결과를 내고, 모르는 것은 추측하지
 않고 모른다고 말합니다.
 
-> **상태: 알파(v0.1.0a1).** Ubuntu 22.04의 bash·zsh에서 테스트되었고, macOS는 GitHub CI 러너에서
+> **상태: 알파(v0.1.0a2).** Ubuntu 22.04의 bash·zsh에서 테스트되었고, macOS는 GitHub CI 러너에서
 > 계획 수립과 zsh 훅까지 확인했습니다. **다만 Mac에서 번역된 명령을 실제로 실행해 본 적은 없습니다.**
 > 규칙 범위도 의도적으로 아주 작습니다.
 > 자세한 내용은 [README.md](README.md)의 *Status* 절을 보세요.
@@ -57,7 +57,7 @@ Run? [y/N]
 
 ## 써 보기
 
-Python 3.8+ (표준 라이브러리만 사용). PyPI에 **알파**로 올라가 있습니다(지금은 `0.1.0a1`뿐).
+Python 3.8+ (표준 라이브러리만 사용). PyPI에 **알파**로 올라가 있습니다(지금은 알파 버전뿐).
 
 ```sh
 pipx install babelsh                  # macOS는 먼저 `brew install pipx`. 또는 pip install babelsh

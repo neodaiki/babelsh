@@ -31,7 +31,7 @@ fidelity: exact
 No cloud call. No model in the loop. The same input always gives the same answer, and when `ush`
 doesn't know something it says so instead of guessing.
 
-> **Status: alpha (v0.1.0a1).** Tested on Ubuntu 22.04 with bash and zsh. On macOS, CI on a GitHub
+> **Status: alpha (v0.1.0a2).** Tested on Ubuntu 22.04 with bash and zsh. On macOS, CI on a GitHub
 > runner (macOS 26, arm64, zsh 5.9) confirms host detection, translation planning and the zsh hook
 > — but nothing has been *executed* on a Mac yet, and nobody has used it on a laptop. See
 > [Status](#status--what-is-and-isnt-verified). Rule coverage is deliberately tiny so far.
@@ -70,8 +70,8 @@ doesn't know something it says so instead of guessing.
 
 ## Try it
 
-Needs Python 3.8+ (standard library only). `babelsh` is on PyPI as an **alpha** (the only
-release so far is `0.1.0a1`):
+Needs Python 3.8+ (standard library only). `babelsh` is on PyPI as an **alpha** (pre-release
+versions only so far):
 
 ```sh
 pipx install babelsh        # macOS: `brew install pipx` first; or: pip install babelsh
